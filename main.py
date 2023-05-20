@@ -9,6 +9,10 @@ import configparser
 import codecs
 import unicodedata
 from colorama import Fore, init
+from event_checks import EventChecks
+
+
+
 init()
 
 def main():
@@ -17,25 +21,6 @@ def main():
         config.read_file(f)
     admin_users = config.get('Admins', 'users').split(',')
     banned_users = [user for user, banned in config.items('banned_users') if banned.lower() == 'true']
-    
-    gg_message_list = [v for k, v in config.items('gg_messages')]
-    gg_authors = {}
-    gg_mention_window = 300  # 5 minutes
-    gg_message_cooldown = 1200  # 20 minutes
-    last_gg_response_time = 0  
-
-    safety_meeting_messages = [v for k, v in config.items('safety_meeting_messages')]
-    safety_meeting_mentions = {}
-    last_safety_message_time = 0
-    safety_message_cooldown = 60 * 20  # 20 minutes
-    safety_mention_window = 60 * 5  # 5 minutes
-
-    # Slava tracking
-    slava_messages = [v for v in config["slava_messages"].values()]
-    slava_mentions = {}
-    last_slava_message_time = 0
-    slava_message_cooldown = 60 * 20  # Twenty minutes in seconds
-    slava_mention_window = 2 * 60  # Two minutes in seconds
 
     should_continue = True
     user_last_message_times = {}
@@ -71,6 +56,7 @@ def main():
             "✈️🤖 JetsBotv4 Ready 🟢! Use '[!gpt] {your text}'. Reset our chat with '!gpt forget me'. Let's talk! Feedback: https://forms.gle/DWrGcBCEXofu5TNg8"
         )
 
+    event_checker = EventChecks()
 
 
 
@@ -168,88 +154,13 @@ def main():
                 db_manager.store_message("user", c.author.name, question, answer)
                 if not silent:
                     youtube_chat.send_live_chat_message(live_chat_id, answer)
+
+            event_checker.check_gg_event(author_name, c.message.lower(), youtube_chat, live_chat_id)
+            event_checker.check_safety_event(author_name, c.message.lower(), youtube_chat, live_chat_id)
+            event_checker.check_slava_event(author_name, c.message.lower(), youtube_chat, live_chat_id)
             
-            if c.message.lower() == 'gg':
-                # Update the time of the last 'gg' message for the author
-                gg_authors[c.author.name] = time.time()
 
-                # Remove authors whose 'gg' message is older than the gg_mention_window
-                gg_authors = {author: timestamp for author, timestamp in gg_authors.items() if time.time() - timestamp <= gg_mention_window}
-
-                print(f"gg_authors after filtering: {gg_authors}")  # Debug print
-
-                # If there are at least 3 unique 'gg' authors in the last gg_mention_window and the cooldown has passed
-                if len(gg_authors) >= 3 and time.time() - last_gg_response_time > gg_message_cooldown:
-                    # Select a random message from the gg_messages
-                    random_message = random.choice(gg_message_list)
-
-                    print(f"Sending gg message: {random_message}")  # Debug print
-
-                    # Send the message to YouTube
-                    youtube_chat.send_live_chat_message(live_chat_id, random_message)
-
-                    # Update the time of the last 'gg' response
-                    last_gg_response_time = time.time()
-
-                    # Clear the list of 'gg' authors
-                    gg_authors.clear()
-
-
-            # Check if the message contains 'safety meeting' or ':_safety:' and the cooldown has passed
-            if ("safety meeting" in c.message.lower() or ":_safety:" in c.message.lower()) and time.time() - last_safety_message_time > safety_message_cooldown:
-                # Update the timestamp of the 'safety meeting' message from this user
-                safety_meeting_mentions[c.author.name] = time.time()
-
-                # Remove users whose 'safety meeting' message is older than the safety_mention_window
-                safety_meeting_mentions = {user: t for user, t in safety_meeting_mentions.items() if time.time() - t <= safety_mention_window}
-
-                # If there are at least 2 unique users who mentioned 'safety meeting' in the last safety_mention_window
-                if len(safety_meeting_mentions) >= 3:
-                    # Select a random message from the safety_meeting_messages
-                    random_message = random.choice(safety_meeting_messages)
-
-                    # Send the message to YouTube
-                    youtube_chat.send_live_chat_message(live_chat_id, random_message)
-
-                    # Update the time of the last 'safety meeting' message
-                    last_safety_message_time = time.time()
-
-                    # Clear the dictionary of 'safety meeting' messages
-                    safety_meeting_mentions.clear()
-
-            if ("slava ukraini" in c.message.lower() or "slava ukraine" in c.message.lower()) and time.time() - last_slava_message_time > slava_message_cooldown:
-                if (
-                    author_name not in slava_mentions
-                    or time.time() - slava_mentions[author_name]
-                    > slava_mention_window
-                ):
-                    slava_mentions[
-                        author_name
-                    ] = time.time()  # Add or update the author's mention time
-                if (
-                    len(
-                        [
-                            user
-                            for user, mention_time in slava_mentions.items()
-                            if time.time() - mention_time < slava_mention_window
-                        ]
-                    )
-                    >= 2
-                ):
-                    message = random.choice(
-                        slava_messages
-                    )  # Choose a random Slava Ukraini! message
-                    youtube_chat.send_live_chat_message(live_chat_id, message)
-                    last_slava_message_time = time.time()
-                    slava_mentions = (
-                        {}
-                    )  # Reset the dictionary after sending a message
     youtube_chat.send_live_chat_message(live_chat_id, "GPT: Status: 🔴", )
-
-
-
-
-
 
 if __name__ == "__main__":
     main()
