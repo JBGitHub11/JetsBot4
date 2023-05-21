@@ -26,7 +26,6 @@ def main():
     parser = argparse.ArgumentParser(description='Process video ID.')
     parser.add_argument('--videoid', type=str)
     parser.add_argument('--silent', action='store_true')
-    parser.add_argument("--restrict",type=int,default=0)
     args = parser.parse_args()
     video_id = args.videoid
     silent = args.silent
@@ -41,16 +40,8 @@ def main():
     live_chat_id = youtube_chat.get_live_chat_id(video_id)
     chat = pytchat.create(video_id=video_id)
 
-    if args.restrict:
-        youtube_chat.send_live_chat_message(
-            live_chat_id,
-            f"✈️🤖 JetsBotv4 Live 🟢! Use '[!gpt] {{your text}}'. Slow mode on 🐢: 1 chat every {args.restrict} min. Wipe chats with '!gpt forget me' Feedback: https://forms.gle/DWrGcBCEXofu5TNg8."
-        )
-    else:
-        youtube_chat.send_live_chat_message(
-            live_chat_id,
-            "✈️🤖 JetsBotv4 Ready 🟢! Use '[!gpt] {your text}'. Reset our chat with '!gpt forget me'. Let's talk! Feedback: https://forms.gle/DWrGcBCEXofu5TNg8"
-        )
+    if not silent:
+        youtube_chat.send_live_chat_message(live_chat_id,"✈️🤖 JetsBotv4 Ready 🟢! Use '[!gpt] {your text}'. Reset our chat with '!gpt forget me'. Let's talk! Feedback: https://forms.gle/DWrGcBCEXofu5TNg8")
 
     event_checker = EventChecks()
     admin_checks = AdminCommands(db_manager, youtube_chat, live_chat_id, admin_users, config)
@@ -77,38 +68,22 @@ def main():
                     youtube_chat.send_live_chat_message(live_chat_id, f"GPT: @{c.author.name[:10]} Error deleting your data. Please try again. 😓")
                 continue
 
-            admin_commands = ['!gpt stats', '!gpt shutdown']
+            admin_commands = ['!gpt stats', '!gpt shutdown', '!gpt truncate']
+
             # Admin commands
             if c.author.name in admin_users:
-                if c.message in admin_commands:
-                    result = admin_checks.process_command(c.message, args.restrict)
-                    if result is not None:
-                        args.restrict = result
+                # Check if the command (without arguments) is in the list of admin commands
+                if c.message.lower() in admin_commands:
+                    result = admin_checks.process_command(c.message)
+                    if result is False:
+                        should_continue = False
                         continue
-                    break
-
-
-
-            # Admin commands
-            if c.author.name in admin_users and c.message == ('!gpt stats'):
-                result = admin_checks.process_command(c.message, args.restrict)
-                if result is not None:
-                    args.restrict = result
-                continue
-
+                    if result is True:
+                        continue
 
 
             # Chatty Chatbot
             if c.message.startswith('!gpt'):
-                if c.author.name in user_last_message_times:
-                    time_since_last_message = time.time() - user_last_message_times[c.author.name]
-                    if time_since_last_message < args.restrict * 60:
-                        time_left = args.restrict * 60 - time_since_last_message
-                        print(f"Ignoring message from {c.author.name} due to restriction. They can send a message in {time_left:.2f} seconds.")
-                        continue
-
-                user_last_message_times[c.author.name] = time.time()
-
                 question = c.message[4:].strip()
                 question = "".join(ch if unicodedata.category(ch)[0]!="C" else ' ' for ch in question)
 
