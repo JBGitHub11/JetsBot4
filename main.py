@@ -102,7 +102,8 @@ def main():
                 # Store the message in the database
                 db_manager.store_message("user", c.author.name, question, answer)
                 if not silent:
-                    youtube_chat.send_live_chat_message(live_chat_id, answer)
+                    formatted_answer = f"GPT: @{c.author.name} {answer}"
+                    youtube_chat.send_live_chat_message(live_chat_id, formatted_answer)
 
             # Event Checks
             event_checker.check_gg_event(c.author.name, c.message.lower(), youtube_chat, live_chat_id)
