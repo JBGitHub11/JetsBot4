@@ -19,9 +19,8 @@ def main():
         config.read_file(f)
     admin_users = config.get('Admins', 'users').split(',')
     banned_users = [user for user, banned in config.items('banned_users') if banned.lower() == 'true']
-
+    prefixes = [v for k, v in config.items('prefixes')]
     should_continue = True
-    user_last_message_times = {}
 
     parser = argparse.ArgumentParser(description='Process video ID.')
     parser.add_argument('--videoid', type=str)
@@ -40,8 +39,8 @@ def main():
     live_chat_id = youtube_chat.get_live_chat_id(video_id)
     chat = pytchat.create(video_id=video_id)
 
-    if not silent:
-        youtube_chat.send_live_chat_message(live_chat_id,"✈️🤖 JetsBotv4 Ready 🟢! Use '[!gpt] {your text}'. Reset our chat with '!gpt forget me'. Let's talk! Feedback: https://forms.gle/DWrGcBCEXofu5TNg8")
+    #if not silent:
+        #youtube_chat.send_live_chat_message(live_chat_id,"✈️🤖 JetsBotv4 Ready 🟢! Use '[!gpt] {your text}'. Reset our chat with '!gpt forget me'. Let's talk! Feedback: https://forms.gle/DWrGcBCEXofu5TNg8")
 
     event_checker = EventChecks()
     admin_checks = AdminCommands(db_manager, youtube_chat, live_chat_id, admin_users, config)
@@ -81,10 +80,11 @@ def main():
                     if result is True:
                         continue
 
-
             # Chatty Chatbot
-            if c.message.startswith('!gpt'):
-                question = c.message[4:].strip()
+            lower_message = c.message.lower()
+            if any(lower_message.startswith(prefix.lower()) for prefix in prefixes):
+                print(prefixes)
+                question = c.message.split(' ', 1)[1].strip()  # Split only on the first space, so that we get the rest of the sentence
                 question = "".join(ch if unicodedata.category(ch)[0]!="C" else ' ' for ch in question)
 
                 answer = gpt_chat_bot.ask_gpt(question, c.author.name)
@@ -92,8 +92,8 @@ def main():
 
                 answer = "".join(ch if unicodedata.category(ch)[0]!="C" else ' ' for ch in answer)
 
-                if len(answer) > 190:
-                    truncated_answer = answer[:190]
+                if len(answer) > 180:
+                    truncated_answer = answer[:180]
                     last_punctuation = max(truncated_answer.rfind(ch) for ch in '.!?')
                     if last_punctuation != -1:
                         answer = truncated_answer[:last_punctuation + 1]
@@ -102,7 +102,9 @@ def main():
                 # Store the message in the database
                 db_manager.store_message("user", c.author.name, question, answer)
                 if not silent:
-                    formatted_answer = f"GPT: @{c.author.name} {answer}"
+                    valid_answer = "".join(ch if ch.isprintable() else ' ' for ch in answer)
+                    truncated_username = c.author.name[:15]
+                    formatted_answer = f"GPT: @{truncated_username} {valid_answer}"
                     youtube_chat.send_live_chat_message(live_chat_id, formatted_answer)
 
             # Event Checks
@@ -110,7 +112,7 @@ def main():
             event_checker.check_safety_event(c.author.name, c.message.lower(), youtube_chat, live_chat_id)
             event_checker.check_slava_event(c.author.name, c.message.lower(), youtube_chat, live_chat_id)
 
-    youtube_chat.send_live_chat_message(live_chat_id, "GPT: Status: 🔴", )
+    #youtube_chat.send_live_chat_message(live_chat_id, "GPT: Status: 🔴", )
 
 if __name__ == "__main__":
     main()
