@@ -14,6 +14,11 @@ class YouTubeChat:
         self.youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=self.credentials)
         self.silent = silent
 
+    def refresh_credentials_if_expired(self):
+        if self.credentials.expired and self.credentials.refresh_token:
+            print("Credentials Expired.")
+            self.credentials.refresh(Request())
+
     def get_credentials(self):
         credentials = None
         if os.path.exists(self.token_file):

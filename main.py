@@ -46,6 +46,7 @@ def main():
     admin_checks = AdminCommands(db_manager, youtube_chat, live_chat_id, admin_users, config)
 
     while chat.is_alive() and should_continue:
+        youtube_chat.refresh_credentials_if_expired()
         for c in chat.get().sync_items():            
             message_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(c.timestamp/1000.0))
             if 'jets' in c.author.name.lower() or 'jets' in c.message.lower():
@@ -111,7 +112,12 @@ def main():
             event_checker.check_gg_event(c.author.name, c.message.lower(), youtube_chat, live_chat_id)
             event_checker.check_safety_event(c.author.name, c.message.lower(), youtube_chat, live_chat_id)
             event_checker.check_slava_event(c.author.name, c.message.lower(), youtube_chat, live_chat_id)
-
+    if not chat.is_alive():
+        print("Chat has ended or paused.")
+    elif not should_continue:
+        print("Script was stopped.")
+    else:
+        print("An unknown error occurred.")
     #youtube_chat.send_live_chat_message(live_chat_id, "GPT: Status: 🔴", )
 
 if __name__ == "__main__":
