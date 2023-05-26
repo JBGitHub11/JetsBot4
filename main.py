@@ -93,8 +93,8 @@ def main():
 
                 answer = "".join(ch if unicodedata.category(ch)[0]!="C" else ' ' for ch in answer)
 
-                if len(answer) > 180:
-                    truncated_answer = answer[:180]
+                if len(answer) > 175:
+                    truncated_answer = answer[:175]
                     last_punctuation = max(truncated_answer.rfind(ch) for ch in '.!?')
                     if last_punctuation != -1:
                         answer = truncated_answer[:last_punctuation + 1]
