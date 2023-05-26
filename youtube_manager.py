@@ -16,8 +16,14 @@ class YouTubeChat:
 
     def refresh_credentials_if_expired(self):
         if self.credentials.expired and self.credentials.refresh_token:
-            print("Credentials Expired.")
-            self.credentials.refresh(Request())
+            print("Credentials Expired. Refreshing now...")
+            try:
+                self.credentials.refresh(Request())
+                print("Credentials Refreshed.")
+            except Exception as e:
+                print("Error refreshing credentials: ", e)
+
+
 
     def get_credentials(self):
         credentials = None

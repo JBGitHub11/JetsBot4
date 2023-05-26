@@ -114,6 +114,10 @@ def main():
             event_checker.check_slava_event(c.author.name, c.message.lower(), youtube_chat, live_chat_id)
     if not chat.is_alive():
         print("Chat has ended or paused.")
+        try:
+            chat.raise_for_status()
+        except Exception as e:
+            print(f"Exception raised: {e}")
     elif not should_continue:
         print("Script was stopped.")
     else:
