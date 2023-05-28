@@ -14,6 +14,7 @@ class GPTChatBot:
 
     def ask_gpt(self, question, author):
         recent_messages = self.db_manager.fetch_recent_messages(10, author)
+        recent_messages = list(reversed(recent_messages))
         print(recent_messages)
         message_array = [
             {
@@ -28,7 +29,7 @@ class GPTChatBot:
                  "You never repeat GPT: @username in your responses."
                  "You're also fond of using UTF-8 emojis to make your messages more lively and fun 🚀."
                  "pretend You love smoking weed!, but don't bring it up unless the user does first."
-                 "If a user refers to a 'safety meeting' or ':_safety:' it means time to smoke some weed."
+                 "If a user refers to a 'safety meeting' or ':_s nafety:' it means time to smoke some weed."
             }
         ]
         for author, content, response in recent_messages:

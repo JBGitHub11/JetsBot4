@@ -84,8 +84,11 @@ def main():
             # Chatty Chatbot
             lower_message = c.message.lower()
             if any(lower_message.startswith(prefix.lower()) for prefix in prefixes):
-                print(prefixes)
-                question = c.message.split(' ', 1)[1].strip()  # Split only on the first space, so that we get the rest of the sentence
+                message_parts = c.message.split(' ', 1)
+                if len(message_parts) > 1:
+                    question = message_parts[1].strip()  # Split only on the first space, so that we get the rest of the sentence
+                else:
+                    continue  # If there's no second part, just continue to the next message
                 question = "".join(ch if unicodedata.category(ch)[0]!="C" else ' ' for ch in question)
 
                 answer = gpt_chat_bot.ask_gpt(question, c.author.name)

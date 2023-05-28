@@ -67,10 +67,18 @@ class DatabaseManager:
 
     def fetch_recent_messages(self, num_messages, author):
         self.cursor.execute(
-            "SELECT author_name, content, assistant_response FROM messages WHERE author_name = ? ORDER BY timestamp ASC LIMIT ?",
-            (author, num_messages)
+            """
+            SELECT author_name, content, assistant_response 
+            FROM messages 
+            WHERE author_name = ? 
+            ORDER BY timestamp DESC
+            LIMIT ?
+            """,
+            (author, num_messages),
         )
         return self.cursor.fetchall()
+
+
 
     def store_message(self, role, author_name, text, assistant_response=None):
         self.cursor.execute(
