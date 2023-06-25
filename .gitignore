@@ -6,3 +6,4 @@ client_secret.json
 jetsbot_memory.db
 .vscode/settings.json
 .vscode/
+*.bak

@@ -3,7 +3,7 @@ import pickle
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 from google.auth.transport.requests import Request
-
+import time
 
 class YouTubeChat:
     def __init__(self, db_manager, client_secrets_file, token_file, scopes, silent):
@@ -13,6 +13,7 @@ class YouTubeChat:
         self.credentials = self.get_credentials()
         self.youtube = googleapiclient.discovery.build('youtube', 'v3', credentials=self.credentials)
         self.silent = silent
+        self.user_message_counts = {}
 
     def refresh_credentials_if_expired(self):
         if self.credentials.expired and self.credentials.refresh_token:
@@ -57,7 +58,7 @@ class YouTubeChat:
 
         return live_chat_id
 
-    def send_live_chat_message(self, live_chat_id, message):
+    def send_live_chat_message(self, live_chat_id, message):   
         if self.silent:
             print(f"Silent mode is on. Would have sent: {message}")
             return
@@ -74,4 +75,5 @@ class YouTubeChat:
             }
         )
         response = request.execute()
+
         return response
